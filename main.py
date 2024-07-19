@@ -12,12 +12,10 @@ app = Flask(__name__)
 app.config['UPLOAD_FOLDER'] = 'uploads/'
 app.config['ALLOWED_EXTENSIONS'] = {'csv'}
 
-
 def allowed_file(filename):
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in app.config['ALLOWED_EXTENSIONS']
 
-
-def criar_pdf(contagens, caminho_pdf, nome_pdf):
+def criar_pdf(contagens, caminho_pdf, nome_pdf, num_respondentes):
     c = canvas.Canvas(caminho_pdf, pagesize=letter)
     width, height = letter
 
@@ -42,7 +40,7 @@ def criar_pdf(contagens, caminho_pdf, nome_pdf):
     c.drawCentredString(width / 2.0, height - 5 * inch, f"Data: {data_envio_formulario} - {data_atual_2}")
 
     # Imprimir número de respondentes
-    c.drawCentredString(width / 2.0, height - 6 * inch, f"Respondentes: {len(contagens)}")
+    c.drawCentredString(width / 2.0, height - 6 * inch, f"Respondentes: {num_respondentes}")
 
     c.showPage()
 
@@ -60,6 +58,58 @@ def criar_pdf(contagens, caminho_pdf, nome_pdf):
 
     c.setFont("Helvetica-Bold", 16)
     c.drawString(50, height - 180, "Visão Geral")
+
+    c.setFont("Helvetica-Bold", 16)
+    c.drawString(50, height - 210, "Motivação de viagem dos clientes")
+    
+    c.setFont("Helvetica", 16)
+    c.drawString(50, height - 230, "Principais motivos para os respondentes viajarem")
+
+    c.setFont("Helvetica-Bold", 16)
+    c.drawString(50, height - 260, "Frequência de viagem dos respondentes")
+    
+    c.setFont("Helvetica", 16)
+    c.drawString(50, height - 280, "Frequência com oque os respondentes viajam")
+
+    c.setFont("Helvetica-Bold", 16)
+    c.drawString(50, height - 310, "Motivos do por que não viajarem conosco")
+    
+    c.setFont("Helvetica", 16)
+    c.drawString(50, height - 330, "Porque os clientes deixam de comprar conosco")
+
+    c.setFont("Helvetica-Bold", 16)
+    c.drawString(50, height - 360, "Motivos da escolha dos concorrentes")
+    
+    c.setFont("Helvetica", 16)
+    c.drawString(50, height - 380, "O que os concorrentes oferecem que atrai os respondentes")
+
+    c.setFont("Helvetica-Bold", 16)
+    c.drawString(50, height - 410, "Quais são os principais concorrentes")
+    
+    c.setFont("Helvetica", 16)
+    c.drawString(50, height - 430, "Quais outras empresas de ônibus os respondentes escolhem")
+
+    c.setFont("Helvetica-Bold", 16)
+    c.drawString(50, height - 460, "Satisfação quanto aos nossos serviços")
+    
+    c.setFont("Helvetica", 16)
+    c.drawString(50, height - 480, "Satisfação dos respondentes com os nossos serviços")
+
+    c.setFont("Helvetica-Bold", 16)
+    c.drawString(50, height - 510, "Viajariam novamente conosco")
+    
+    c.setFont("Helvetica", 16)
+    c.drawString(50, height - 530, "Qual a chance de viajar conosco novamente")
+
+    c.showPage()
+
+    # Informações de Preferências dos clientes
+
+    c.setFont("Helvetica-Bold", 24)
+    c.drawCentredString(width / 2.0, height - 100, "Preferências (Profilling)")
+
+    c.setFont("Helvetica", 16)
+    c.drawString(50, height - 150, f"{contagens['Qual o seu gênero?']}")
 
     c.showPage()
 
@@ -86,11 +136,9 @@ def criar_pdf(contagens, caminho_pdf, nome_pdf):
     c.showPage()
     c.save()
 
-
 @app.route('/')
 def upload_file():
     return render_template('upload.html')
-
 
 @app.route('/uploader', methods=['GET', 'POST'])
 def uploader_file():
@@ -124,7 +172,9 @@ def uploader_file():
 
             pdf_path = os.path.join(app.config['UPLOAD_FOLDER'], filename.rsplit('.', 1)[0] + '.pdf')
 
-            criar_pdf(contagens, pdf_path, filename)
+            num_respondentes = len(relatorio)
+
+            criar_pdf(contagens, pdf_path, filename, num_respondentes)
 
             return send_file(pdf_path, as_attachment=True)
 
