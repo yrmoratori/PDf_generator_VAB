@@ -1,0 +1,30 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    font-family: Montserrat, sans-serif;
+  }
+
+header {
+    background-color: #008FFF;
+    padding: 24px 80px;
+    display: flex;
+    align-items: center;
+    color: #ffffff;
+    justify-content: space-between;
+  }
+
+#copyright {
+    background-color: #008FFF;
+    color: #ffffff;
+    text-align: center;
+    padding: 24px;
+    width: 100%;
+    position: absolute;
+    bottom: 0;
+  }
+  
+#copyright a {
+    color: #071270;
+    text-underline-offset: 5px;
+  }
