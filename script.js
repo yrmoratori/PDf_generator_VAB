@@ -23,17 +23,42 @@ input.addEventListener('change', function(event) {
     }
 });
 
-// Função para contar os dados do CSV
+// Função para contar e ordenar os dados do CSV, incluindo porcentagem dos votos
 function contagemDeDados(dadosCSV, dadosTopicoCSV) {
     const contagemDados = dadosCSV.reduce((acc, row) => {
-        const data = row[dadosTopicoCSV];
-        acc[data] = (acc[data] || 0) + 1;
+        // Verifica se o dado não é vazio ou undefined
+        if (row[dadosTopicoCSV]) {
+            // Divide a string por vírgula e processa cada parte
+            const splitData = row[dadosTopicoCSV].split(',');
+            splitData.forEach(data => {
+                // Remove espaços em branco adicionais antes de contar
+                const cleanedData = data.trim();
+                acc[cleanedData] = (acc[cleanedData] || 0) + 1;
+            });
+        }
         return acc;
     }, {});
 
-    console.log('oie');
+    console.log(dadosTopicoCSV);
     console.log(contagemDados);
-    console.log('end');
+
+    // Converte o objeto contagemDados em uma array de entradas, ordena pela contagem
+    const tableData = Object.entries(contagemDados).map(([data, count]) => ([data, count]));
+    tableData.sort((a, b) => a[1] - b[1]);
+
+    // Calcula o total das contagens
+    const totalCount = tableData.reduce((acc, [data, count]) => acc + count, 0);
+
+    // Adiciona a porcentagem de cada entrada
+    const tableDataWithPercentage = tableData.map(([data, count]) => {
+        const percentage = ((count / totalCount) * 100).toFixed(2) + '%';
+        return [data, count, percentage];
+    });
+
+    // Adiciona o total ao final do array
+    tableDataWithPercentage.push(['Total', totalCount, '100%']);
+
+    return tableDataWithPercentage;
 }
 
 // Função para gerar o PDF
@@ -48,8 +73,6 @@ document.addEventListener('DOMContentLoaded', (event) => {
         }
 
         const file_name = input.files[0]['name'].replaceAll(' ', '_').replaceAll('__', '').slice(0, 35);
-        
-        const file = input.files[0];
         
         // Cria o documento PDF
         const doc = new jsPDF();
@@ -101,14 +124,94 @@ document.addEventListener('DOMContentLoaded', (event) => {
         doc.text("Viajariam novamente conosco", 20, 245);
         doc.text("Qual a chance de viajar conosco novamente", 20, 255);
 
-        // Páginas de Preferências (Profilling)
+        // Página de Preferências (Profilling)
         doc.addPage();
 
         doc.setTextColor("#black");
-        doc.text("Preferências (Profilling)", doc.internal.pageSize.width / 2, 40, { align: "center" });
+        doc.text("Preferências (Profilling)", doc.internal.pageSize.width / 2, 20, { align: "center" });
 
-        // Contagem dos votos
-        contagemDeDados(csvData, 'Qual o seu gênero?');
+        console.log(csvData);
+
+        let dataGender = contagemDeDados(csvData, 'Qual o seu gênero?');
+        let dataHorario = contagemDeDados(csvData, 'Em qual horário do dia você prefere viajar?');
+        let dataService = contagemDeDados(csvData, 'Quando você viaja de ônibus, qual serviço você prefere?');
+
+        doc.autoTable({
+            head: [['GÊNEROS DOS RESPONDENTES', '', ''],['GÊNERO', 'VOTOS', 'PORCENTAGEM']],
+            body: dataGender,
+            startY: 40
+        });
+
+        doc.autoTable({
+            head: [['PREFERÊNCIA DE HORÁRIO DOS RESPONDENTES', '', ''], ['HORÁRIO', 'VOTOS', 'PORCENTAGEM']],
+            body: dataHorario,
+            startY: doc.previousAutoTable.finalY + 10 // Inicia a segunda tabela abaixo da primeira
+        });
+
+        doc.autoTable({
+            head: [['PREFERÊNCIA DE SERVIÇO DOS RESPONDENTES', '', ''], ['SERVIÇO', 'VOTOS', 'PORCENTAGEM']],
+            body: dataService,
+            startY: doc.previousAutoTable.finalY + 10
+        });
+
+        // Página de Experiência durante a viagem
+        doc.addPage();
+
+        doc.setTextColor("#black");
+        doc.text("Experiência durante a viagem", doc.internal.pageSize.width / 2, 20, { align: "center" });
+
+        let dataFileira  = contagemDeDados(csvData, 'Quando você viaja de ônibus, em qual fileira de assento você prefere viajar?');
+        let dataLocAssento  = contagemDeDados(csvData, 'Em relação à localização do assento, qual é a sua preferência?');
+        let dataPrefAssento  = contagemDeDados(csvData, 'Qual é a sua preferência quanto aos assentos?');
+        let dataPrefPiso  = contagemDeDados(csvData, 'Em ônibus com dois pisos, em qual piso você prefere viajar?');
+
+        doc.autoTable({
+            head: [['FILEIRA PREFERIDA PELOS RESPONDENTES', '', ''],['FILEIRA', 'VOTOS', 'PORCENTAGEM']],
+            body: dataFileira,
+            startY: 40
+        });
+
+        doc.autoTable({
+            head: [['LOCALIZAÇÃO DOS RESPONDENTES PREFERIDAS', '', ''],['LOCALIZAÇÃO', 'VOTOS', 'PORCENTAGEM']],
+            body: dataLocAssento,
+            startY: doc.previousAutoTable.finalY + 10
+        });
+
+        doc.autoTable({
+            head: [['ASSENTOS PREFERIDOS PELOS RESPONDENTES', '', ''],['ASSENTO', 'VOTOS', 'PORCENTAGEM']],
+            body: dataPrefAssento,
+            startY: doc.previousAutoTable.finalY + 10
+        });
+
+        doc.autoTable({
+            head: [['PISOS PREFERIDOS PELOS RESPONDENTES', '', ''],['PISO', 'VOTOS', 'PORCENTAGEM']],
+            body: dataPrefPiso,
+            startY: doc.previousAutoTable.finalY + 10
+        });
+
+        // Página de Motivações e Frequências
+        doc.addPage();
+
+        doc.setTextColor("#black");
+        doc.text("Motivações e Frequência de viagens dos clientes", doc.internal.pageSize.width / 2, 20, { align: "center" });
+
+        // let dataMotivacao  = contagemDeDados(csvData, 'Quais as principais motivações para sua viagem? (Por favor, selecione todas as que se aplicam)');
+        let dataFrequency  = contagemDeDados(csvData, 'Com que frequência, você viaja?');
+
+        /*
+        doc.autoTable({
+            head: [['MOTIVAÇÃO DAS VIAGENS DOS RESPONDENTES', '', ''],['MOTIVAÇÕES', 'VOTOS', 'PORCENTAGEM']],
+            body: dataMotivacao,
+            startY: 40
+        });
+        */
+
+        doc.autoTable({
+            head: [['FREQUÊNCIA QUE OS RESPONDENTES VIAJAM', '', ''],['FREQUÊNCIAS', 'VOTOS', 'PORCENTAGEM']],
+            body: dataFrequency,
+            startY: 40
+            // startY: doc.previousAutoTable.finalY + 10
+        });
 
         // Generate PDF as Data URL
         const pdfDataUrl = doc.output('dataurlstring');
