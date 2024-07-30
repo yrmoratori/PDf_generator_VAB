@@ -28,6 +28,17 @@ function contagemDeDados(dadosCSV, dadosTopicoCSV) {
     const contagemDados = dadosCSV.reduce((acc, row) => {
         // Verifica se o dado não é vazio ou undefined
         if (row[dadosTopicoCSV]) {
+            // console.log(dadosTopicoCSV);
+
+            if (dadosTopicoCSV == 'Quais as principais motivações para sua viagem? (Por favor, selecione todas as que se aplicam)') {
+                console.log(row[dadosTopicoCSV]);
+            }
+
+            // Remover trechos com virgula
+            if (row[dadosTopicoCSV] == 'Raramente, viajo' || row[dadosTopicoCSV] == '1º piso, mesmo nivel do motorista' || row[dadosTopicoCSV] == 'Prefiro assentos individuais, sempre escolho quando disponível') {
+                row[dadosTopicoCSV] = row[dadosTopicoCSV].split(',')[0];
+            }
+
             // Divide a string por vírgula e processa cada parte
             const splitData = row[dadosTopicoCSV].split(',');
             splitData.forEach(data => {
@@ -38,9 +49,6 @@ function contagemDeDados(dadosCSV, dadosTopicoCSV) {
         }
         return acc;
     }, {});
-
-    console.log(dadosTopicoCSV);
-    console.log(contagemDados);
 
     // Converte o objeto contagemDados em uma array de entradas, ordena pela contagem
     const tableData = Object.entries(contagemDados).map(([data, count]) => ([data, count]));
@@ -124,13 +132,11 @@ document.addEventListener('DOMContentLoaded', (event) => {
         doc.text("Viajariam novamente conosco", 20, 245);
         doc.text("Qual a chance de viajar conosco novamente", 20, 255);
 
-        // Página de Preferências (Profilling)
+        // 1º Página de Preferências (Profilling)
         doc.addPage();
 
         doc.setTextColor("#black");
         doc.text("Preferências (Profilling)", doc.internal.pageSize.width / 2, 20, { align: "center" });
-
-        console.log(csvData);
 
         let dataGender = contagemDeDados(csvData, 'Qual o seu gênero?');
         let dataHorario = contagemDeDados(csvData, 'Em qual horário do dia você prefere viajar?');
@@ -154,11 +160,11 @@ document.addEventListener('DOMContentLoaded', (event) => {
             startY: doc.previousAutoTable.finalY + 10
         });
 
-        // Página de Experiência durante a viagem
+        // 2º Página de Preferências (Profilling)
         doc.addPage();
 
         doc.setTextColor("#black");
-        doc.text("Experiência durante a viagem", doc.internal.pageSize.width / 2, 20, { align: "center" });
+        doc.text("Preferências (Profilling)", doc.internal.pageSize.width / 2, 20, { align: "center" });
 
         let dataFileira  = contagemDeDados(csvData, 'Quando você viaja de ônibus, em qual fileira de assento você prefere viajar?');
         let dataLocAssento  = contagemDeDados(csvData, 'Em relação à localização do assento, qual é a sua preferência?');
@@ -213,11 +219,22 @@ document.addEventListener('DOMContentLoaded', (event) => {
             // startY: doc.previousAutoTable.finalY + 10
         });
 
+        // Página de Probabilidade de viajar novamente conosco
+        doc.addPage();
+
+        doc.setTextColor("#black");
+        doc.text("Viajaria novamente com a Águia Branca", doc.internal.pageSize.width / 2, 20, { align: "center" });
+
+        let dataViajarNovamente  = contagemDeDados(csvData, 'Em uma escala de 1 a 5, qual é a probabilidade de você escolher viajar com a Águia Branca novamente no futuro, sendo 1 muito improvável e 5 muito provável?');
+
+        doc.autoTable({
+            head: [['PROBABILIDADE DE VIAJAR CONOSCO NOVAMENTE', '', ''],['PROBABILIDADE', 'VOTOS', 'PORCENTAGEM']],
+            body: dataViajarNovamente,
+            startY: 40
+        });
+
         // Generate PDF as Data URL
         const pdfDataUrl = doc.output('dataurlstring');
-
-        // Log the PDF URL to the console
-        console.log(pdfDataUrl);
 
         // Preview the PDF in a new window/tab
         const pdfWindow = window.open("");
